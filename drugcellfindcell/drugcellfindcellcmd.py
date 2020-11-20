@@ -5,7 +5,7 @@ import subprocess
 import sys
 import argparse
 import json
-import drugcellfinddrug
+import drugcellfindcell
 
 def _parse_arguments(desc, args):
     """

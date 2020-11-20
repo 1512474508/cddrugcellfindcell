@@ -13,7 +13,7 @@ with open('HISTORY.rst') as history_file:
     history = history_file.read()
 
 
-with open(os.path.join('drugcellfinddrug', '__init__.py')) as ver_file:
+with open(os.path.join('drugcellfindcell', '__init__.py')) as ver_file:
     for line in ver_file:
         if line.startswith('__version__'):
             version=re.sub("'", "", line[line.index("'"):])
@@ -27,23 +27,23 @@ test_requirements = [
 ]
 
 setup(
-    name='drugcellfinddrug',
+    name='drugcellfindcell',
     version=version,
     description="Maps genes to terms",
     long_description=readme + '\n\n' + history,
     author="Christopher Churas",
     author_email='churas.camera@gmail.com',
-    url='https://github.com/ndexbio/drugcellfinddrug',
+    url='https://github.com/ndexbio/drugcellfindcell',
     packages=[
-        'drugcellfinddrug',
+        'drugcellfindcell',
     ],
-    package_dir={'drugcellfinddrug':
-                 'drugcellfinddrug'},
+    package_dir={'drugcellfindcell':
+                 'drugcellfindcell'},
     include_package_data=True,
     install_requires=requirements,
     license="BSD license",
     zip_safe=False,
-    keywords='drugcellfinddrug',
+    keywords='drugcellfindcell',
     classifiers=[
         'Development Status :: 2 - Pre-Alpha',
         'Intended Audience :: Developers',
@@ -57,10 +57,10 @@ setup(
         'Programming Language :: Python :: 3.7',
     ],
     scripts=[
-        'drugcellfinddrug/drugcellfinddrugcmd.py',
-        'drugcellfinddrug/1_build_input.py',
-        'drugcellfinddrug/2_generate_output.py',
-        'drugcellfinddrug/commandline_test_cpu.sh'
+        'drugcellfindcell/drugcellfindcellcmd.py',
+        'drugcellfindcell/1_build_input.py',
+        'drugcellfindcell/2_generate_output.py',
+        'drugcellfindcell/commandline_test_cpu.sh'
     ],
     test_suite='tests',
     tests_require=test_requirements

@@ -48,7 +48,7 @@ clean-test: ## remove test and coverage artifacts
 	rm -fr htmlcov/
 
 lint: ## check style with flake8
-	flake8 drugcellfinddrug tests
+	flake8 drugcellfindcell tests
 
 test: ## run tests quickly with the default Python
 	
@@ -59,16 +59,16 @@ test-all: ## run tests on every Python version with tox
 
 coverage: ## check code coverage quickly with the default Python
 	
-		coverage run --source drugcellfinddrug setup.py test
+		coverage run --source drugcellfindcell setup.py test
 	
 		coverage report -m
 		coverage html
 		$(BROWSER) htmlcov/index.html
 
 docs: ## generate Sphinx HTML documentation, including API docs
-	rm -f docs/drugcellfinddrug.rst
+	rm -f docs/drugcellfindcell.rst
 	rm -f docs/modules.rst
-	sphinx-apidoc -o docs/ drugcellfinddrug
+	sphinx-apidoc -o docs/ drugcellfindcell
 	$(MAKE) -C docs clean
 	$(MAKE) -C docs html
 	$(BROWSER) docs/_build/html/index.html
@@ -92,9 +92,9 @@ install: clean ## install the package to the active Python's site-packages
 	python setup.py install
 
 dockerbuild: dist ## build docker image and store in local repository
-	@cv=`grep '__version__' drugcellfinddrug/__init__.py | sed "s/^.*= *'//" | sed "s/'.*//"`; \
-	docker build -t dotasekndex/drugcellfinddrug:$$cv -f docker/Dockerfile .
+	@cv=`grep '__version__' drugcellfindcell/__init__.py | sed "s/^.*= *'//" | sed "s/'.*//"`; \
+	docker build -t dotasekndex/drugcellfindcell:$$cv -f docker/Dockerfile .
 
 dockerpush: dockerbuild ## push image to dockerhub
-	@cv=`grep '__version__' drugcellfinddrug/__init__.py | sed "s/^.*= *'//" | sed "s/'.*//"`; \
-	docker push dotasekndex/drugcellfinddrug:$$cv
+	@cv=`grep '__version__' drugcellfindcell/__init__.py | sed "s/^.*= *'//" | sed "s/'.*//"`; \
+	docker push dotasekndex/drugcellfindcell:$$cv
