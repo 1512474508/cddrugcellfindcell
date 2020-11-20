@@ -7,6 +7,7 @@ import argparse
 import json
 import drugcellfindcell
 
+
 def _parse_arguments(desc, args):
     """
     Parses command line arguments
@@ -19,24 +20,8 @@ def _parse_arguments(desc, args):
                                      formatter_class=help_fm)
     parser.add_argument('input',
                         help='comma delimited list of genes in file')
-    parser.add_argument('--maxpval', type=float, default=0.00000001,
-                        help='Max p value')
-    parser.add_argument('--minoverlap', default=0.05, type=float,
-                        help='Minimum Jaccard to allow for hits')
-    parser.add_argument('--omit_intersections', action='store_true',
-                        help='If set, do NOT query for gene intersections')
-    parser.add_argument('--excludesource', default='HP,MIRNA,TF',
-                        help='Comma delimited list of sources to exclude')
-    parser.add_argument('--maxgenelistsize', type=int,
-                        default=500, help='Maximum number of genes that can'
-                                          'be passed in via a query, '
-                                          'exceeding this results in '
-                                          'error')
-    parser.add_argument('--precision', type=int, default=3,
-                        help='Number of decimal places to round '
-                             'jaccard')
-    parser.add_argument('--organism', default='hsapiens',
-                        help='Organism to use')
+    parser.add_argument('--email',
+                        help='e-mail address to notify upon completion')
     return parser.parse_args(args)
 
 
@@ -48,6 +33,7 @@ def read_inputfile(inputfile):
     """
     with open(inputfile, 'r') as f:
         return f.read()
+
 
 def main(args):
     """
@@ -82,11 +68,12 @@ def main(args):
     """
 
     theargs = _parse_arguments(desc, args[1:])
+    taskId = theargs.input[theargs.input.index('/tasks/') + 7 : theargs.input.index('/input.txt')]
 
     try:
         inputfile = os.path.abspath(theargs.input)
         os.mkdir("/tmp/drugcellinput")
-        
+
         inputGenes = read_inputfile(inputfile)
         genes = inputGenes.strip(',').strip('\n').split(',')
 
@@ -102,12 +89,18 @@ def main(args):
 
         with open('/tmp/drugcellinput/output.log', 'a') as stdout:
             with open('/tmp/drugcellinput/error.log', 'a') as stderr:
-                subprocess.call([drugcell_pipeline, drugcell_input_directory], stdout=stdout, stderr=stderr)
+                subprocess.call(
+                    [drugcell_pipeline, drugcell_input_directory], stdout=stdout, stderr=stderr)
 
         with open('/tmp/drugcellinput/output.json') as f:
             jsonResult = json.load(f)
 
-        theres = {'inputGenes': inputGenes, 'predictions' : jsonResult['predictions']}
+        theres = {
+            'taskId': taskId,
+            'email': theargs.email,
+            'inputGenes': inputGenes,
+            'predictions': jsonResult['predictions']
+        }
         if theres is None:
             sys.stderr.write('No drugs found\n')
         else:
