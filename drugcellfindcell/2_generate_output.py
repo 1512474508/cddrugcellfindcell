@@ -2,10 +2,11 @@ import sys
 import json 
 import uuid
 
-drug2idfile = "/opt/drugcell/DrugCell/data/drug2ind.txt"
-drugmappingfile = "/opt/drugcell/DrugCell/data/compound_names.txt" 
+cell2mutationfile = "../data/cell2mutation_list.txt"
 
-rlippfile_prefix = "/opt/drugcell/DrugCell/data/rlipp/fallmo100_rlipp_"
+go2namefile = "../data/goterm2name.txt"
+go2genefile = "../data/goterm2genes.txt" 
+
 top_n = 10
 
 # load mapping from a file
@@ -25,51 +26,60 @@ def load_mapping(filename, keyind, valind, skipline=0):
 
 def main():
 	inputfile = sys.argv[1]
+	rlippfile = sys.argv[2]
 	outputfile = inputfile.replace('.txt', '.json')
 	
-	# load mapping between smiles to drug id
-	smiles2id = load_mapping(drug2idfile, 1, 0)
+	# load information about GO terms
+	go2name = load_mapping(go2namefile, 0, 1)
+	go2gene = load_mapping(go2genefile, 0, 1)
 
-	# load mapping between smiles and drug names
-	smiles2name = load_mapping(drugmappingfile, 1, 2, 1)
+	# find relevant information for each GO term 
+	rlipp = {}
+	with open(rlippfile, 'r') as fi:
+		for line in fi:
+			tokens = line.strip().split('\t')
+			rlipp[tokens[0]] = float(tokens[1])
 
-	# generate uuid for this instance
-	this_id = str(uuid.uuid1())
+	# sort rlipp scores
+	sorted_rlipp = {k: v for k, v in sorted(rlipp.items(), key=lambda item: item[1], reverse=True)}
+	
+	rlippfile = rlippfile.replace('.txt', '_sorted.txt')
+	with open(rlippfile, 'w') as fo:
+		for r in sorted_rlipp:
+			fo.write("%s\t%s\t%.6f\t%s\n" % (r, go2name[r], sorted_rlipp[r], go2gene[r]))	
+
+	# load mapping between cell to id mapping
+	cell2genes = load_mapping(cell2mutationfile, 0, 1)
 
 	# build a dictionary for the results
 	output = {}
 	output['predictions'] = []
 
-	# read output of DrugCell and add drug name
-	inputfile = sys.argv[1]
-	outputfile = inputfile.replace('.txt', '.json')
+	# collect the top RLIPP pathways	
+	top_pathways = []
+
+	with open(rlippfile, 'r') as fi:
+		for i in range(top_n):
+			line = fi.readline()
+			tokens = line.strip().split('\t')
+
+			top_pathways.append({'GO_id': tokens[0], 'pathway_name': tokens[1], 'RLIPP': tokens[2], 'pathway_genes': tokens[3]})
+
+	output['top_pathways'] = top_pathways
+
 
 	with open(inputfile, 'r') as fi:
 		for line in fi:
 			tokens = line.strip().split('\t')
 	
+			cellname = tokens[0]
 			smiles = tokens[1]
-			drug_id = smiles2id[smiles]
 			predicted = float(tokens[3])
-
-			drug_name = "unknown" 
-			try:
-				drug_name = smiles2name[smiles]
-			except:
-				pass
-		
-			# collect the top RLIPP pathways	
-			rlipp_file = rlippfile_prefix + drug_id + ".names"
-			top_pathways = []
-	
-			with open(rlipp_file, 'r') as fi:
-				for i in range(top_n):
-					line = fi.readline()
-					tokens = line.strip().split('\t')
-					top_pathways.append({'GO_id': tokens[1], 'pathway_name': tokens[4], 'RLIPP': float(tokens[3])})
 	
 			# add a line to .json
-			output['predictions'].append({'drug_id': drug_id, 'drug_name': drug_name, 'predicted_AUC': predicted, 'drug_smiles': smiles, 'top_pathways': top_pathways})
+			output['predictions'].append({'cell': cellname, 'predicted_AUC': predicted, 'mutations': cell2genes[cellname]})
+
+
 
 	with open(outputfile, 'w') as fo:
 		json.dump(output, fo, indent=4)

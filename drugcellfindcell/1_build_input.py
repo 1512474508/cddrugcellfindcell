@@ -1,10 +1,9 @@
 import sys
+from rdkit import Chem
+from rdkit.Chem.Draw import SimilarityMaps
 
-workingdir = "/opt/drugcell/DrugCell/data/"
-gene2idfile = workingdir + "gene2ind.txt"
-drug2idfile = workingdir + "drug2ind.txt"
 
-cell_name = "user_cell"
+cell2idfile = "../data/cell2ind.txt"
 
 # load one column from a file
 def load_1col(filename, ind):
@@ -29,45 +28,33 @@ def load_mapping(filename):
 # main function
 def main():
 	# load data
-	gene2id = load_mapping(gene2idfile)
-	drugs = load_1col(drug2idfile, 1)
+	cells = load_1col(cell2idfile, 1)
 
 	# load input data
 	inputfile = sys.argv[1]
-	inputgenes = load_1col(inputfile, 0)
+	inputdrug = load_1col(inputfile, 0)[0]
 
 	outputdir = sys.argv[2] + "/"
 
-	# filtered genes - non-DrugCell genes
-	new_inputgenes = set(gene2id.keys()).intersection(inputgenes)
-	filtered_genes = set(inputgenes).difference(new_inputgenes)
-
-	# log filtered genes
-	with open(outputdir + "filtered_genes.txt", 'w') as fo:
-		fo.write('\n'.join(list(filtered_genes)))
-
-	# build the genotype of cell
-	vec = [0] * len(gene2id)
-	for g in new_inputgenes:
-		vec[gene2id[g]] = 1
+	# build morgan fingerprint for the input drug
+	d = Chem.MolFromSmiles(inputdrug)
+	f = list(map(str, list(SimilarityMaps.GetMorganFingerprint(d, fpType='bv',radius=2))))
 
 	# print out new genotype input file
-	with open(outputdir + "input_cell2mutation.txt", 'w') as fo:
-		fo.write("%s\n" % ','.join(list(map(str, vec))))
-		fo.write("%s\n" % ','.join(list(map(str, vec))))
+	with open(outputdir + "input_drug_fingerprint.txt", 'w') as fo:
+		fo.write("%s\n" % ','.join(f))
+		fo.write("%s\n" % ','.join(f))
 
 	# generate new input cell2ind file
-	with open(outputdir + "input_cell2id.txt", 'w') as fo:
-		fo.write("0\t%s\n" % cell_name)
-		fo.write("1\t%s_dim\n" % cell_name)
+	with open(outputdir + "input_drug2id.txt", 'w') as fo:
+		fo.write("0\t%s\n" % inputdrug)
+		fo.write("1\tdummy_%s\n" % inputdrug)
 
 	# generate new input data file for prediction
 	with open(outputdir + "input.txt", 'w') as fo:
-		for d in drugs:
-			fo.write("%s\t%s\t-1\n" % (cell_name, d))
+		for c in cells:
+			fo.write("%s\t%s\t-1\n" % (c, inputdrug))
 	
-
-
 
 
 if __name__ == "__main__":
